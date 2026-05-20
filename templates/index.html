@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Giao diện crawl tin tức từ các báo Việt Nam">
+    <title>VN News Crawler</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #0b0f1a;
+            --surface: #121829;
+            --surface-2: #1a2238;
+            --border: rgba(255,255,255,0.06);
+            --text: #e2e8f0;
+            --text-muted: #8892a4;
+            --accent: #6366f1;
+            --accent-glow: rgba(99,102,241,0.25);
+            --green: #22c55e;
+            --red: #ef4444;
+            --orange: #f59e0b;
+            --radius: 14px;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* Subtle animated gradient background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(ellipse at 20% 50%, rgba(99,102,241,0.08) 0%, transparent 60%),
+                        radial-gradient(ellipse at 80% 20%, rgba(139,92,246,0.06) 0%, transparent 50%),
+                        radial-gradient(ellipse at 50% 80%, rgba(59,130,246,0.05) 0%, transparent 50%);
+            animation: bgShift 20s ease-in-out infinite alternate;
+            z-index: -1;
+            pointer-events: none;
+        }
+        @keyframes bgShift {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-5%, 3%); }
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px 60px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #818cf8, #6366f1, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.02em;
+        }
+        .header p {
+            color: var(--text-muted);
+            margin-top: 8px;
+            font-size: 0.95rem;
+        }
+
+        /* Card */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px;
+            margin-bottom: 24px;
+            backdrop-filter: blur(10px);
+            transition: border-color 0.3s;
+        }
+        .card:hover {
+            border-color: rgba(99,102,241,0.15);
+        }
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card-title .icon {
+            width: 20px; height: 20px;
+            background: var(--accent);
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+        }
+
+        /* Form elements */
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .form-group.full { grid-column: 1 / -1; }
+
+        label {
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        select, input, textarea {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 14px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 0.92rem;
+            outline: none;
+            transition: border-color 0.25s, box-shadow 0.25s;
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(0.7);
+            cursor: pointer;
+        }
+        select:focus, input:focus, textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        /* Date filter section */
+        .date-filter {
+            margin-bottom: 16px;
+            padding: 16px;
+            background: rgba(99,102,241,0.04);
+            border: 1px solid rgba(99,102,241,0.1);
+            border-radius: 12px;
+        }
+        .date-filter-title {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 90px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 20px;
+            background: var(--surface-2);
+            border-radius: 10px;
+            padding: 4px;
+        }
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            font-size: 0.88rem;
+            font-weight: 500;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--text-muted);
+            border: none;
+            background: none;
+            transition: all 0.25s;
+        }
+        .tab.active {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 2px 12px var(--accent-glow);
+        }
+        .tab:hover:not(.active) {
+            color: var(--text);
+            background: rgba(255,255,255,0.04);
+        }
+
+        /* Tab panes */
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+
+        /* Button */
+        .btn-crawl {
+            width: 100%;
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: inherit;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #6366f1, #818cf8);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s;
+            margin-top: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-crawl::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent, rgba(255,255,255,0.1), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.5s;
+        }
+        .btn-crawl:hover::before { transform: translateX(100%); }
+        .btn-crawl:hover {
+            box-shadow: 0 4px 24px var(--accent-glow);
+            transform: translateY(-1px);
+        }
+        .btn-crawl:active { transform: translateY(0); }
+        .btn-crawl:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Status bar */
+        .status-bar {
+            display: none;
+            margin-top: 20px;
+            padding: 16px 20px;
+            background: var(--surface-2);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        .status-bar.visible { display: flex; align-items: center; gap: 12px; }
+        .spinner {
+            width: 20px; height: 20px;
+            border: 2.5px solid rgba(99,102,241,0.2);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .status-text {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        .status-bar.done .status-text { color: var(--green); }
+        .status-bar.error .status-text { color: var(--red); }
+
+        /* Results */
+        .results-section {
+            display: none;
+            margin-top: 24px;
+        }
+        .results-section.visible { display: block; }
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .results-header h2 {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        .results-count {
+            font-size: 0.82rem;
+            background: var(--accent);
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .result-item {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 12px;
+            transition: border-color 0.25s, transform 0.2s;
+            animation: fadeUp 0.4s ease both;
+        }
+        .result-item:hover {
+            border-color: rgba(99,102,241,0.2);
+            transform: translateY(-2px);
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .result-file {
+            font-size: 0.75rem;
+            color: var(--accent);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 6px;
+        }
+        .result-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        .result-body {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+            white-space: pre-wrap;
+            max-height: 120px;
+            overflow: hidden;
+            position: relative;
+        }
+        .result-body.expanded {
+            max-height: none;
+        }
+        .result-body.expanded::after {
+            display: none;
+        }
+        .result-body::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 40px;
+            background: linear-gradient(transparent, var(--surface));
+        }
+
+        /* Image gallery */
+        .result-images {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding: 12px 0 4px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent) var(--surface-2);
+        }
+        .result-images::-webkit-scrollbar {
+            height: 6px;
+        }
+        .result-images::-webkit-scrollbar-track {
+            background: var(--surface-2);
+            border-radius: 3px;
+        }
+        .result-images::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 3px;
+        }
+        .result-img-wrap {
+            flex: 0 0 auto;
+            max-width: 280px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            background: var(--surface-2);
+            transition: border-color 0.25s, transform 0.2s;
+        }
+        .result-img-wrap:hover {
+            border-color: var(--accent);
+            transform: scale(1.02);
+        }
+        .result-img-wrap img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            display: block;
+        }
+        .result-img-caption {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            padding: 8px 10px;
+            line-height: 1.4;
+        }
+        .result-img-count {
+            font-size: 0.75rem;
+            color: var(--accent);
+            font-weight: 600;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .form-row { grid-template-columns: 1fr; }
+            .header h1 { font-size: 1.6rem; }
+            .container { padding: 24px 16px 40px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header class="header">
+        <h1>📰 VN News Crawler</h1>
+        <p>Thu thập tin tức từ VNExpress, DanTri, VietNamNet</p>
+    </header>
+
+    <div class="card">
+        <div class="card-title">
+            <span class="icon">⚙</span>
+            Cấu hình Crawler
+        </div>
+
+        <!-- Task tabs -->
+        <div class="tabs">
+            <button class="tab active" data-tab="url" id="tab-url" onclick="switchTab('url')">
+                🔗 Crawl theo URL
+            </button>
+            <button class="tab" data-tab="type" id="tab-type" onclick="switchTab('type')">
+                📂 Crawl theo Chuyên mục
+            </button>
+        </div>
+
+        <!-- Common: website + workers -->
+        <div class="form-row">
+            <div class="form-group">
+                <label for="webname">Trang báo</label>
+                <select id="webname" onchange="updateCategories()">
+                    <option value="vnexpress">VNExpress</option>
+                    <option value="dantri">DanTri</option>
+                    <option value="vietnamnet">VietNamNet</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="num_workers">Số luồng (workers)</label>
+                <input type="number" id="num_workers" value="1" min="1" max="10">
+            </div>
+        </div>
+
+        <!-- Date filter -->
+        <div class="date-filter">
+            <div class="date-filter-title">📅 Lọc theo thời gian đăng bài</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="date_from">Từ ngày</label>
+                    <input type="date" id="date_from">
+                </div>
+                <div class="form-group">
+                    <label for="date_to">Đến ngày</label>
+                    <input type="date" id="date_to">
+                </div>
+            </div>
+        </div>
+
+        <!-- URL tab pane -->
+        <div class="tab-pane active" id="pane-url">
+            <div class="form-group full">
+                <label for="urls">Danh sách URL (mỗi dòng 1 URL)</label>
+                <textarea id="urls" placeholder="https://vnexpress.net/bai-viet-1.html&#10;https://vnexpress.net/bai-viet-2.html">https://vnexpress.net/quang-hai-ban-thang-rat-quan-trong-voi-toi-4520944.html
+https://vnexpress.net/ten-hag-ronaldo-se-con-ghi-nhieu-ban-4521227.html</textarea>
+            </div>
+        </div>
+
+        <!-- Type tab pane -->
+        <div class="tab-pane" id="pane-type">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="article_type">Chuyên mục</label>
+                    <select id="article_type">
+                        <option value="all">🌟 Tất cả chuyên mục</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="total_pages">Số trang</label>
+                    <input type="number" id="total_pages" value="1" min="1" max="50">
+                </div>
+            </div>
+        </div>
+
+        <button class="btn-crawl" id="btn-crawl" onclick="startCrawl()">
+            🚀 Bắt đầu Crawl
+        </button>
+
+        <div class="status-bar" id="status-bar">
+            <div class="spinner" id="spinner"></div>
+            <span class="status-text" id="status-text">Đang chờ...</span>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <section class="results-section" id="results-section">
+        <div class="results-header">
+            <h2>📋 Kết quả</h2>
+            <span class="results-count" id="results-count">0 bài</span>
+        </div>
+        <div id="results-list"></div>
+    </section>
+</div>
+
+<script>
+    // Category data from server
+    const CATEGORIES = {{ categories | tojson }};
+
+    let currentTab = 'url';
+
+    function switchTab(tab) {
+        currentTab = tab;
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+        document.getElementById(`pane-${tab}`).classList.add('active');
+    }
+
+    function updateCategories() {
+        const web = document.getElementById('webname').value;
+        const sel = document.getElementById('article_type');
+        const cats = CATEGORIES[web] || [];
+        sel.innerHTML = '<option value="all">🌟 Tất cả chuyên mục</option>';
+        cats.forEach(c => {
+            sel.innerHTML += `<option value="${c}">${c}</option>`;
+        });
+    }
+
+    function startCrawl() {
+        const btn = document.getElementById('btn-crawl');
+        const statusBar = document.getElementById('status-bar');
+        const statusText = document.getElementById('status-text');
+        const spinner = document.getElementById('spinner');
+        const resultsSection = document.getElementById('results-section');
+
+        const payload = {
+            task: currentTab,
+            webname: document.getElementById('webname').value,
+            num_workers: document.getElementById('num_workers').value,
+            date_from: document.getElementById('date_from').value,
+            date_to: document.getElementById('date_to').value,
+        };
+
+        if (currentTab === 'url') {
+            payload.urls = document.getElementById('urls').value;
+        } else {
+            payload.article_type = document.getElementById('article_type').value;
+            payload.total_pages = document.getElementById('total_pages').value;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '⏳ Đang xử lý...';
+        statusBar.className = 'status-bar visible';
+        statusText.textContent = 'Đang khởi tạo...';
+        spinner.style.display = 'block';
+        resultsSection.classList.remove('visible');
+
+        fetch('/api/crawl', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                statusBar.className = 'status-bar visible error';
+                statusText.textContent = data.error;
+                spinner.style.display = 'none';
+                btn.disabled = false;
+                btn.innerHTML = '🚀 Bắt đầu Crawl';
+                return;
+            }
+            pollStatus(data.job_id);
+        })
+        .catch(err => {
+            statusBar.className = 'status-bar visible error';
+            statusText.textContent = 'Lỗi kết nối: ' + err.message;
+            spinner.style.display = 'none';
+            btn.disabled = false;
+            btn.innerHTML = '🚀 Bắt đầu Crawl';
+        });
+    }
+
+    function pollStatus(jobId) {
+        const statusBar = document.getElementById('status-bar');
+        const statusText = document.getElementById('status-text');
+        const spinner = document.getElementById('spinner');
+        const btn = document.getElementById('btn-crawl');
+
+        const interval = setInterval(() => {
+            fetch(`/api/status/${jobId}`)
+            .then(r => r.json())
+            .then(data => {
+                statusText.textContent = data.message;
+
+                if (data.status === 'done') {
+                    clearInterval(interval);
+                    statusBar.className = 'status-bar visible done';
+                    spinner.style.display = 'none';
+                    btn.disabled = false;
+                    btn.innerHTML = '🚀 Bắt đầu Crawl';
+                    renderResults(data.results || []);
+                } else if (data.status === 'error') {
+                    clearInterval(interval);
+                    statusBar.className = 'status-bar visible error';
+                    spinner.style.display = 'none';
+                    btn.disabled = false;
+                    btn.innerHTML = '🚀 Bắt đầu Crawl';
+                }
+            });
+        }, 1000);
+    }
+
+    function renderResults(results) {
+        const section = document.getElementById('results-section');
+        const list = document.getElementById('results-list');
+        const count = document.getElementById('results-count');
+
+        count.textContent = `${results.length} bài`;
+        list.innerHTML = '';
+
+        results.forEach((item, i) => {
+            const div = document.createElement('div');
+            div.className = 'result-item';
+            div.style.animationDelay = `${i * 0.06}s`;
+
+            let imagesHtml = '';
+            if (item.images && item.images.length > 0) {
+                imagesHtml = `
+                    <div class="result-img-count">🖼️ ${item.images.length} hình ảnh</div>
+                    <div class="result-images">
+                        ${item.images.map(img => `
+                            <div class="result-img-wrap">
+                                <a href="${img.url}" target="_blank">
+                                    <img src="${img.url}" alt="${escapeHtml(img.caption)}" loading="lazy">
+                                </a>
+                                ${img.caption ? `<div class="result-img-caption">${escapeHtml(img.caption)}</div>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            div.innerHTML = `
+                <div class="result-file">${item.file}</div>
+                <div class="result-title">${escapeHtml(item.title)}</div>
+                <div class="result-body" style="cursor: pointer;" onclick="this.classList.toggle('expanded')" title="Nhấn để xem toàn bộ/thu gọn">${escapeHtml(item.body)}</div>
+                ${imagesHtml}
+            `;
+            list.appendChild(div);
+        });
+
+        section.classList.add('visible');
+    }
+
+    function escapeHtml(text) {
+        const d = document.createElement('div');
+        d.textContent = text;
+        return d.innerHTML;
+    }
+
+    // Init categories on load
+    updateCategories();
+</script>
+
+</body>
+</html>
