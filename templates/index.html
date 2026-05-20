@@ -454,6 +454,7 @@
                     <option value="vnexpress">VNExpress</option>
                     <option value="dantri">DanTri</option>
                     <option value="vietnamnet">VietNamNet</option>
+                    <option value="sueddeutsche">Sueddeutsche Zeitung</option>
                 </select>
             </div>
             <div class="form-group">
@@ -536,13 +537,51 @@ https://vnexpress.net/ten-hag-ronaldo-se-con-ghi-nhieu-ban-4521227.html</textare
         document.getElementById(`pane-${tab}`).classList.add('active');
     }
 
+    // Translation dictionary for category slugs
+    const TRANSLATIONS = {
+        // Vietnamese Sites (without accents)
+        "thoi-su": "Thời sự",
+        "du-lich": "Du lịch",
+        "the-gioi": "Thế giới",
+        "kinh-doanh": "Kinh doanh",
+        "khoa-hoc": "Khoa học",
+        "giai-tri": "Giải trí",
+        "the-thao": "Thể thao",
+        "phap-luat": "Pháp luật",
+        "giao-duc": "Giáo dục",
+        "suc-khoe": "Sức khỏe",
+        "doi-song": "Đời sống",
+        "xa-hoi": "Xã hội",
+        "bat-dong-san": "Bất động sản",
+        "lao-dong-viec-lam": "Lao động - Việc làm",
+        "tam-long-nhan-ai": "Tấm lòng nhân ái",
+        "van-hoa": "Văn hóa",
+        "suc-manh-so": "Sức mạnh số",
+        "an-sinh": "An sinh",
+        "thong-tin-truyen-thong": "Thông tin truyền thông",
+        "oto-xe-may": "Ô tô - Xe máy",
+        
+        // Sueddeutsche Zeitung (German)
+        "politik": "Chính trị (Politik)",
+        "wirtschaft": "Kinh tế (Wirtschaft)",
+        "panorama": "Đời sống / Toàn cảnh (Panorama)",
+        "sport": "Thể thao (Sport)",
+        "kultur": "Văn hóa (Kultur)",
+        "wissen": "Khoa học / Tri thức (Wissen)",
+        "digital": "Công nghệ số (Digital)",
+        "karriere": "Sự nghiệp (Karriere)",
+        "reise": "Du lịch (Reise)",
+        "auto": "Xe cộ (Auto)"
+    };
+
     function updateCategories() {
         const web = document.getElementById('webname').value;
         const sel = document.getElementById('article_type');
         const cats = CATEGORIES[web] || [];
         sel.innerHTML = '<option value="all">🌟 Tất cả chuyên mục</option>';
         cats.forEach(c => {
-            sel.innerHTML += `<option value="${c}">${c}</option>`;
+            const label = TRANSLATIONS[c] || c;
+            sel.innerHTML += `<option value="${c}">${label}</option>`;
         });
     }
 

@@ -111,6 +111,10 @@ def index():
             "thong-tin-truyen-thong", "phap-luat", "oto-xe-may",
             "bat-dong-san", "du-lich"
         ],
+        "sueddeutsche": [
+            "politik", "wirtschaft", "panorama", "sport", "kultur",
+            "wissen", "digital", "karriere", "reise", "auto"
+        ],
     }
     return render_template("index.html", categories=categories)
 
