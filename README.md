@@ -4,7 +4,7 @@
 [![Requests 2.28.1](https://img.shields.io/badge/Requests-2.28.1-black)](https://pypi.org/project/requests/)
 [![tqdm 4.64.1](https://img.shields.io/badge/tqdm-4.64.1-orange)](https://pypi.org/project/tqdm/)  
 
-Crawling titles and paragraphs of Vietnamese online articles using their **URLs** or categories names 
+Crawling titles, paragraphs, and images of Vietnamese online articles using their **URLs** or categories names. Includes a rich Web-based UI for easy management.
 
 Current supported websites:
 - [VNExpress](https://vnexpress.net/)
@@ -20,6 +20,16 @@ pip install -r requirements.txt
 ```
 
 ## 👨‍💻 Usage
+
+### 1. Web-based UI (Recommended)
+You can use the new Web Interface to configure crawlers, filter by date, and view downloaded articles (including images) directly in your browser.
+Run the Flask server:
+```bash
+python app.py
+```
+Then open your browser and go to: `http://localhost:5000`
+
+### 2. Command Line
 Modifying your crawler configuration file (default is `crawler_config.yml`) to customize your crawling progress.
 
 ```yml
@@ -41,6 +51,10 @@ num_workers: 1
 # article_type == "all" to crawl all of types
 article_type: "du-lich"
 total_pages: 1
+
+# Filter by date (optional, format: YYYY-MM-DD)
+date_from: "2023-01-01"
+date_to: "2023-12-31"
 ```
 
 Then simply run:
@@ -87,3 +101,7 @@ By increasing the value of `num_workers`, you can accelerate the crawling proces
 - [x] Add logging module
 - [x] Use yml config file instead of argparse
 - [x] Crawl in other news websites
+- [x] Web-based UI with Flask
+- [x] Download and serve article images
+- [x] Filter articles by publication date
+- [ ] Schedule automatic crawls
