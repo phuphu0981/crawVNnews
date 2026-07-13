@@ -1,0 +1,29 @@
+# Exclude virtual environment
+venv/
+.venv/
+env/
+
+# Exclude git directories
+.git/
+.gitignore
+
+# Exclude existing crawl results (they will be mounted via volumes instead)
+result/
+
+# Exclude Python bytecode and caches
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Exclude IDE settings
+.vscode/
+.idea/
+
+# Exclude local scratch files and documentation
+scratch/
+Dockerfile
+docker-compose.yml
+.dockerignore

@@ -1,0 +1,11 @@
+services:
+  crawler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vnnews-crawler
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./result:/app/result
+    restart: unless-stopped
